@@ -2,7 +2,7 @@ AutoTrader Car Valuation App
 
 Overview: 
 
-This is a simple project I created for fun to help me with selling my car. Web scrapping can be fun, so I wanted to do something useful with it too. Simply follow the prompts and enter your search criteria such as Make, Model, Max Mileage (will give you vehicles up to this value), Postcode (postcode mandatory), variant, ect. Code will output the highest price, lowest and average price found for your car. It will also output all the results to a .csv; useful for further analysis.
+This is a simple project I created for fun to help me with selling my car. Web scrapping can be fun, so I wanted to do something useful with it too. Simply follow the prompts and enter your search criteria such as Make, Model, Max Mileage (will give you vehicles up to this value), Postcode (postcode mandatory), variant, ect. Code will output the highest price, lowest and average price found for your car. Which should hopefully assit in giving you an idea how much you should be pricing your car. It will also output all the results to a .csv, useful for further analysis.
 
 Installation:
 Clone this repository to your local machine.
