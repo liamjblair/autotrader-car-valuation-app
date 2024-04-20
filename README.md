@@ -1,4 +1,4 @@
-AutoTrader Car Valuation App
+## AutoTrader Car Valuation App
 
 Overview: 
 
