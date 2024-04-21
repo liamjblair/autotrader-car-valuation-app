@@ -11,6 +11,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 import constants
+import logger as logging
+from datetime import datetime
+
 
 class MakeSoup:
 
@@ -18,17 +21,20 @@ class MakeSoup:
 
     def __init__(self):
         self.base_url = constants.BASE_URL
-        self.service = constants.CHROME_DRIVER
 
     def get_page_souce(self, url):
-        service = Service(executable_path=self.service)
-        web_driver = webdriver.Chrome(service=service)
-        web_driver.get(url)
-        time.sleep(10) 
-        source = web_driver.page_source
-        results = BeautifulSoup(source, "html.parser")
+        try:
+            web_driver = webdriver.Chrome()
+            web_driver.get(url)
+            time.sleep(10) 
+            source = web_driver.page_source
+            results = BeautifulSoup(source, "html.parser")
 
-        return results  
+            return results  
+        
+        except Exception as e:
+            logging.logger.error(f"{e} ocurred accessing site - {url} - {datetime.now()}")
+            sys.exit()
     
     def build_url(self, **kwargs):
 
@@ -63,31 +69,31 @@ class FindVehicles:
 
     def search_cars(self):
 
-        cars_found = self.soup.find('h1', class_= "at__sc-1n64n0d-5 at__sc-1ldcqnd-4 ldLGbL iKpNlQ")
-        cars_found = cars_found.text
+        try:
+            cars_found = self.soup.find('h1', class_= "at__sc-1n64n0d-5 at__sc-1ldcqnd-4 ldLGbL iKpNlQ")
+            cars_found = cars_found.text
 
-        pages_found = self.soup.find("p", class_="at__sc-1n64n0d-9 kybQww").text
-        num_of_pages = int(pages_found.split()[-1])
+            pages_found = self.soup.find("p", class_="at__sc-1n64n0d-9 kybQww").text
+            num_of_pages = int(pages_found.split()[-1])
 
-        print(f"Found {cars_found} cars matching this criteria. {num_of_pages} page(s) found.")
+            logging.logger.info(f"Found {cars_found} cars matching this criteria. {num_of_pages} page(s) found.")
 
-        file = "autotradervaluationapp\AutoTraderScrapeOutput.csv"
-        f = open(file, 'w')
-        headers = 'price, year, mileage, engine_size, power, transmission, fueltype, page_num, url\n'
-        f.write(headers)
-        num_of_cars = 0
-        for page in range(num_of_pages):
-            
-            new_url = url + '&page=' + str(page + 1)
-            print(f"Page URL - {new_url}")
-            url_obj = MakeSoup()
-            page_results = url_obj.get_page_souce(new_url)
-            
-            cars = page_results.find_all("section", attrs={"data-testid": "trader-seller-listing"})
-            
-            for car in cars:
-                num_of_cars += 1
-                try:
+            file = "AutoTraderScrapeOutput.csv"
+            f = open(file, 'w')
+            headers = 'price, year, mileage, engine_size, power, transmission, fueltype, page_num, url\n'
+            f.write(headers)
+            num_of_cars = 0
+            for page in range(num_of_pages):
+                
+                new_url = url + '&page=' + str(page + 1)
+                url_obj = MakeSoup()
+                page_results = url_obj.get_page_souce(new_url)
+                
+                cars = page_results.find_all("section", attrs={"data-testid": "trader-seller-listing"})
+                
+                for car in cars:
+                    num_of_cars += 1
+        
                     price = car.find('span', class_='at__sc-1mc7cl3-5 edXwbj')
                     price = price.text
                     price = str(price).replace("£", "").replace(",", "")
@@ -105,17 +111,17 @@ class FindVehicles:
 
                     f.write(f"{price}, {year}, {mileage}, {engine_size}, {power}, {transmission}, {fueltype}, {page}, {new_url}\n")
 
-                except Exception as e:
-                    print(str(e))
-
-        f.close()
+            f.close()
+        
+        except Exception as e:
+            logging.logger.error(f"Following error ocurred while attempting to parse site data {e} - {datetime.now()}. Check source page for any changes with the HTML.")
     
 class SummaryStats:
 
     """Prints out short summary of prices found"""
 
     def stats(self):
-        results = pd.read_csv("autotradervaluationapp\AutoTraderScrapeOutput.csv")
+        results = pd.read_csv("AutoTraderScrapeOutput.csv")
         max_price = results.price.max()
         avg_price = round(results.price.mean(), 2)
         min_price = results.price.min()
@@ -163,10 +169,10 @@ if __name__ == "__main__":
                     variant=variant,
                     transmission=transmission
                     )
-    # TODO log url etc to logging
+ 
     soup = soup_maker.get_page_souce(url)
     vehicles = FindVehicles(soup)
     vehicles.search_cars()
 
-    SummaryStats.stats()
+    print(SummaryStats.stats)
 
