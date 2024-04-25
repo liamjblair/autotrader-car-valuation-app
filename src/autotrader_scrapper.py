@@ -1,15 +1,9 @@
 
-import os
 import sys
 from bs4 import BeautifulSoup
 import pandas as pd
-import math
-from urllib.request import urlopen as url_req
 import time
-import requests
 from selenium import webdriver  
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 import constants
 import logger as logging
 from datetime import datetime
@@ -78,10 +72,14 @@ class FindVehicles:
 
             logging.logger.info(f"Found {cars_found} cars matching this criteria. {num_of_pages} page(s) found.")
 
-            file = "AutoTraderScrapeOutput.csv"
-            f = open(file, 'w')
-            headers = 'price, year, mileage, engine_size, power, transmission, fueltype, page_num, url\n'
-            f.write(headers)
+            try:
+                file = "data/AutoTraderScrapeOutput.csv"
+                f = open(file, 'w')
+                headers = 'price, year, mileage, engine_size, power, transmission, fueltype, url\n'
+                f.write(headers)
+            except FileNotFoundError as e:
+                logging.logger.error(f"following error ocurred trying to access file: {e}")
+
             num_of_cars = 0
             for page in range(num_of_pages):
                 
@@ -109,7 +107,7 @@ class FindVehicles:
                     transmission = specs[5]
                     fueltype = specs[6]
 
-                    f.write(f"{price}, {year}, {mileage}, {engine_size}, {power}, {transmission}, {fueltype}, {page}, {new_url}\n")
+                    f.write(f"{price}, {year}, {mileage}, {engine_size}, {power}, {transmission}, {fueltype}, {new_url}\n")
 
             f.close()
         
@@ -120,8 +118,11 @@ class SummaryStats:
 
     """Prints out short summary of prices found"""
 
+    def __init__(self, file_path="data/AutoTraderScrapeOutput.csv"):
+        self.file_path = file_path
+
     def stats(self):
-        results = pd.read_csv("AutoTraderScrapeOutput.csv")
+        results = pd.read_csv(self.file_path)
         max_price = results.price.max()
         avg_price = round(results.price.mean(), 2)
         min_price = results.price.min()
@@ -174,5 +175,8 @@ if __name__ == "__main__":
     vehicles = FindVehicles(soup)
     vehicles.search_cars()
 
-    print(SummaryStats.stats)
+    summary = SummaryStats()
+    print(summary.stats())
+    
+
 
