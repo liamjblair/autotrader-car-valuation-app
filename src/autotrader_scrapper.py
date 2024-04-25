@@ -1,4 +1,4 @@
-
+import os
 import sys
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -73,7 +73,10 @@ class FindVehicles:
             logging.logger.info(f"Found {cars_found} cars matching this criteria. {num_of_pages} page(s) found.")
 
             try:
-                file = "data/AutoTraderScrapeOutput.csv"
+                # file = "autotradervaluationapp/data/AutoTraderScrapeOutput.csv"
+                file = os.path.join("data", "AutoTraderScrapeOutput.csv")
+                print(file)
+
                 f = open(file, 'w')
                 headers = 'price, year, mileage, engine_size, power, transmission, fueltype, url\n'
                 f.write(headers)
@@ -118,7 +121,7 @@ class SummaryStats:
 
     """Prints out short summary of prices found"""
 
-    def __init__(self, file_path="data/AutoTraderScrapeOutput.csv"):
+    def __init__(self, file_path = os.path.join("data", "AutoTraderScrapeOutput.csv")):
         self.file_path = file_path
 
     def stats(self):
@@ -128,8 +131,10 @@ class SummaryStats:
         min_price = results.price.min()
         prices = f"""
 
-                Highest price found: {max_price}\n
-                Avgerage price: {avg_price}\n
+                Found {len(results)} vehicles matching this criteria:\n
+
+                Highest price found: {max_price}
+                Avgerage price: {avg_price}
                 Lowest price found: {min_price}
 
             """
