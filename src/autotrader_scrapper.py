@@ -7,6 +7,7 @@ from selenium import webdriver
 import constants
 import logger as logging
 from datetime import datetime
+import glob
 
 
 class MakeSoup:
@@ -33,11 +34,16 @@ class MakeSoup:
     def build_url(self, **kwargs):
 
         """build URL string from user parms"""
+
         url_parms = ""
         for key, parm in kwargs.items():
-
+    
             if parm != "":
-                if key == "mileage":
+                if key == "make":
+                    url_parms += "&make=" + make.replace(" ", "%20") # %20 required for spaces in make and model for valid URL string
+                elif key == "model":
+                    url_parms += "&model=" + model.replace(" ", "%20")
+                elif key == "mileage":
                     url_parms += f"&maximum-{key}=" + str(parm)
                 elif key == "fueltype":
                     url_parms += f"&fuel-type=" + str(parm)
@@ -50,7 +56,7 @@ class MakeSoup:
                     url_parms += f"&{key}=" + str(parm)
                 else:
                     url_parms += f"&{key}=" + str(parm)
-    
+        print("#### BASE URL >>> ", self.base_url + url_parms)
         return self.base_url + url_parms
     
 
@@ -58,8 +64,10 @@ class FindVehicles:
 
     """Iterates over the results/pages. Scrapes metrics about each vehicle and stores result as .csv"""
 
-    def __init__(self, soup):
+    def __init__(self, soup, make, model):
         self.soup = soup
+        self.make = make
+        self.model = model
 
     def search_cars(self):
 
@@ -72,10 +80,13 @@ class FindVehicles:
 
             logging.logger.info(f"Found {cars_found} cars matching this criteria. {num_of_pages} page(s) found.")
 
+            # increment the file name for new files with same make/model
             try:
-                # file = "autotradervaluationapp/data/AutoTraderScrapeOutput.csv"
-                file = os.path.join("data", "AutoTraderScrapeOutput.csv")
-                print(file)
+                increment = 1
+                file = os.path.join("data", f"AutoTraderScrapeOutput - {self.make} {self.model}_{increment}.csv")
+                while os.path.exists(file):
+                    increment += 1
+                    file = os.path.join("data", f"AutoTraderScrapeOutput - {self.make} {self.model}_{increment}.csv")
 
                 f = open(file, 'w')
                 headers = 'price, year, mileage, engine_size, power, transmission, fueltype, url\n'
@@ -121,11 +132,15 @@ class SummaryStats:
 
     """Prints out short summary of prices found"""
 
-    def __init__(self, file_path = os.path.join("data", "AutoTraderScrapeOutput.csv")):
-        self.file_path = file_path
+    @staticmethod
+    def stats():
 
-    def stats(self):
-        results = pd.read_csv(self.file_path)
+        """Open most recent file from user search criteria and gather stats"""
+
+        files = glob.glob('data/*')
+        latest_file = max(files, key=os.path.getctime)
+
+        results = pd.read_csv(latest_file)
         max_price = results.price.max()
         avg_price = round(results.price.mean(), 2)
         min_price = results.price.min()
@@ -142,11 +157,13 @@ class SummaryStats:
         return prices
 
 if __name__ == "__main__":
-    # TODO validate user inputs
+    # TODO validate user inputs, add engine size parm
     make = input("Enter make (eg Ford, BMW): ")
     model = input("Input model: ")
+    variant = input("Enter variant. Note, variant must be written exact and is case sensitive (eg 'S Line' not 's line'): ")
+    fuelType = input("Enter fueltype: ").title()
+    transmission = input("Enter transmission: ").title()
     mileage = input("Enter max mileage: ")
-    variant = input("Enter variant: ").title()
     year = input("Enter year: ")
     postcode = input("Enter postcode: ")
     if postcode == "":
@@ -156,13 +173,7 @@ if __name__ == "__main__":
             print("Postcode not entered. Exiting program...")
             sys.exit()
     distance = input("Enter distance: ")
-    fuelType = input("Enter fueltype: ").title()
-    transmission = input("Enter transmission: ").title()
 
-    # add %20 for any spaces in the make name (required for valid url)
-    make = make.replace(" ", "%20") 
-    model = model.replace(" ", "%20")
- 
     soup_maker = MakeSoup()
 
     url = soup_maker.build_url(make=make,
@@ -176,12 +187,21 @@ if __name__ == "__main__":
                     transmission=transmission
                     )
  
-    soup = soup_maker.get_page_souce(url)
-    vehicles = FindVehicles(soup)
-    vehicles.search_cars()
 
-    summary = SummaryStats()
-    print(summary.stats())
+    soup = soup_maker.get_page_souce(url)
+
+    # TODO validate results logic
+    if soup is None or len(soup.find_all()) == 0:
+        logging.logging.INFO(f"No results found for your criteria: {make}, {model}, {variant}, {year}, {fuelType}, {transmission}, {mileage}, {postcode}, {distance}.")
+        print(f"No results found for your criteria: {make}, {model}, {variant}, {year}, {fuelType}, {transmission}, {mileage}, {postcode}, {distance}.")
+    else:
+        vehicles = FindVehicles(soup, make, model)
+        vehicles.search_cars()
+
+        summary = SummaryStats()
+        print(summary.stats())
+
+
     
 
 
