@@ -4,6 +4,9 @@
 
 This is a simple project I created for fun to help me with selling my car. Web scrapping can be fun, so I wanted to do something useful with it too. Simply follow the prompts and enter your search criteria such as Make, Model, Max Mileage (will give you vehicles up to this value), Postcode (postcode mandatory), variant, ect. Code will output the highest price, lowest and average price found for your car. Which should hopefully assit in giving you an idea how much you should be pricing your car. It will also output all the results to a .csv, useful for further analysis. To avoid too many server requests in a short time, I have added time.sleeps in.
 
+## Skills/Technologies
+Python / Web Scraping / Logging / PostgreSQL / Pandas / SQLAlchemy
+
 ## Installation:
 Clone this repository to your local machine.
 Install the required Python packages using pip >>
